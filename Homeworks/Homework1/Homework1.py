@@ -1,6 +1,10 @@
+import os
 from openai import OpenAI
+from dotenv import load_dotenv
 
-client = OpenAI(base_url=URL, api_key=KEY)
+load_dotenv()
+
+client = OpenAI(base_url=os.getenv("URL"), api_key=os.getenv("API_KEY"))
 
 resp = client.completions.create(
     model="Llama3.1-8B-Base",
