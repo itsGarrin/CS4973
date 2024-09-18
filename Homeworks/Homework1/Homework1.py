@@ -252,7 +252,6 @@ def prompt_pal(problem: str) -> str:
     Input: {problem}
     Reasoning:"""
 
-
 def extract_pal(completion: str) -> Optional[int]:
     try:
         # Look for the answer by splitting at "Answer:" and extracting the part after that
@@ -269,7 +268,6 @@ def extract_pal(completion: str) -> Optional[int]:
     except:
         print("BIG ISSUE\n")
         return None  # Return None if there's an error
-
 
 def solve_pal(problem: str) -> Optional[int]:
     resp = client.completions.create(
