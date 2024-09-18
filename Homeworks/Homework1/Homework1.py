@@ -185,16 +185,105 @@ def accuracy_cot(problems: List[dict]) -> List[float]:
 ## Program-Aided Language Models
 # Task 6
 def prompt_pal(problem: str) -> str:
-    pass
+        return f"""
+    Input: Henry and 3 of his friends order 7 pizzas for lunch. Each pizza is cut into 8 slices. If Henry and his friends want to share the pizzas equally, how many slices can each of them have?
+
+    Reasoning:
+    def reason_problem():
+        num_pizzas = 7
+        slices_per_pizza = 8
+        total_slices = num_pizzas * slices_per_pizza
+        num_people = 1 + 3
+        slices_per_person = total_slices / num_people
+        return slices_per_person
+
+    Done
+
+    Input: I have 5 boxes of pencils, each containing 12 pencils. I gave 8 pencils to my friend. How many pencils do I have left?
+
+    Reasoning:
+    def reason_problem():
+        num_boxes = 5
+        num_pencils_per_box = 12
+        total_pencils = num_boxes * num_pencils_per_box
+        total_pencils_left = total_pencils - 8
+        return total_pencils_left
+
+    Done
+
+    Input: A farmer has 3 fields. Each field has 20 rows of crops, and each row has 15 plants. If the farmer sells 100 plants, how many plants does he have left?
+
+    Reasoning:
+    def reason_problem():
+        num_fields = 3
+        num_rows = 20
+        num_plants_per_row = 15
+        total_plants = num_fields * num_rows * num_plants_per_row
+        total_plants_left = total_plants - 100
+        return total_plants_left
+
+    Done
+
+    Input: A school has 200 students. They are divided into 4 classes equally. If 10 students from each class join a sports event, how many students are left in the classes?
+
+    Reasoning:
+    def reason_problem():
+        num_students = 200
+        num_classes = 4
+        num_students_per_class = num_students / num_classes
+        num_students_left_per_class = num_students_per_class - 10
+        total_students_left = num_students_left_per_class * 4
+        return total_students_left
+
+    Done
+
+    Input: {problem}
+    Reasoning:"""
 
 
 def extract_pal(completion: str) -> Optional[int]:
-    pass
+    try:
+        # Look for the answer by splitting at "Answer:" and extracting the part after that
+        answer_part = completion.split("Reasoning:")[-1].strip()
+
+        exec(answer_part)
+        numeric_value = eval("reason_problem()")
+        print(answer_part, numeric_value)
+
+        # If a numeric value is found, return it as a float
+        if numeric_value:
+            return float(numeric_value)
+        else:
+            # print(numeric_value, answer_part)
+            return None  # Return None if no valid number is found
+    except (IndexError, ValueError):
+        print("BIG ISSUE\n")
+        return None  # Return None if there's an error
 
 
 def solve_pal(problem: str) -> Optional[int]:
-    pass
+    resp = client.completions.create(
+    model=model,
+    temperature=0,
+    prompt=prompt_pal(problem),
+    max_tokens=150,
+    stop=["Done"])
+
+    return extract_pal(resp.choices[0].text)
 
 
 def accuracy_pal(problems: List[dict]) -> float:
-    pass
+    accuracies = []
+
+    for _ in tqdm(range(1)):
+        total_correct = 0
+
+        for item in problems:
+            answer = solve_pal(item["question"])
+            if answer == item["answer"]:
+                total_correct += 1
+            else:
+                print(item, "\n\n")
+        accuracies.append(total_correct / len(problems))
+
+    return accuracies
