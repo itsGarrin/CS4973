@@ -199,28 +199,40 @@ def prompt_pal(problem: str) -> str:
 
     Done
 
-    Input: I have 5 boxes of pencils, each containing 12 pencils. I gave 8 pencils to my friend. How many pencils do I have left?
+    Input: Sarah buys three times as many green pens as blue pens. The green pens cost 25% more than the blue pens. She spent $180 on blue pens that cost $30 each. How much did she spend on pens?
 
     Reasoning:
     def reason_problem():
-        num_boxes = 5
-        num_pencils_per_box = 12
-        total_pencils = num_boxes * num_pencils_per_box
-        total_pencils_left = total_pencils - 8
-        return total_pencils_left
+        blue_pen_price = 30
+        blue_pen_cost = 180
+        green_pen_multiplier = 3
+        green_pen_price_increase = 1.25
+        num_blue_pens = blue_pen_cost // blue_pen_price
+        num_green_pens = num_blue_pens * green_pen_multiplier
+        green_pen_price = blue_pen_price * green_pen_price_increase
+        total_blue_pen_cost = num_blue_pens * blue_pen_price
+        total_green_pen_cost = num_green_pens * green_pen_price
+        total_spent = total_blue_pen_cost + total_green_pen_cost
+
+        return total_spent
 
     Done
 
-    Input: A farmer has 3 fields. Each field has 20 rows of crops, and each row has 15 plants. If the farmer sells 100 plants, how many plants does he have left?
+    Input: Nikhil ordered one turkey meal that costs $14, 5 packs of milk that costs $3 each, 4 apples that cost $1.50 each, and some boxes of pizza. Nikhil paid a total of $50. How many boxes of pizza did Nikhil order if each box costs $8.50?
 
     Reasoning:
     def reason_problem():
-        num_fields = 3
-        num_rows = 20
-        num_plants_per_row = 15
-        total_plants = num_fields * num_rows * num_plants_per_row
-        total_plants_left = total_plants - 100
-        return total_plants_left
+        num_turkey_meal = 1
+        turkey_meal_cost = 14
+        milk_cost = 3
+        num_packs_milk = 5
+        apple_cost = 1.5
+        num_apples = 4
+        total_cost = 50
+        money_left_over = (turkey_meal_cost * num_turkey_meal) + (milk_cost * num_packs_milk) + (apple_cost * num_apples)
+        pizza_cost = 8.5
+        boxes_pizza_ordered = money_left_over / pizza_cost
+        return boxes_pizza_ordered
 
     Done
 
@@ -248,15 +260,13 @@ def extract_pal(completion: str) -> Optional[int]:
 
         exec(answer_part)
         numeric_value = eval("reason_problem()")
-        print(answer_part, numeric_value)
 
         # If a numeric value is found, return it as a float
         if numeric_value:
             return float(numeric_value)
         else:
-            # print(numeric_value, answer_part)
             return None  # Return None if no valid number is found
-    except (IndexError, ValueError):
+    except:
         print("BIG ISSUE\n")
         return None  # Return None if there's an error
 
@@ -275,15 +285,13 @@ def solve_pal(problem: str) -> Optional[int]:
 def accuracy_pal(problems: List[dict]) -> float:
     accuracies = []
 
-    for _ in tqdm(range(1)):
+    for _ in tqdm(range(5)):
         total_correct = 0
 
         for item in problems:
             answer = solve_pal(item["question"])
             if answer == item["answer"]:
                 total_correct += 1
-            else:
-                print(item, "\n\n")
         accuracies.append(total_correct / len(problems))
 
     return accuracies
