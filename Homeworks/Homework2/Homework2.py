@@ -78,8 +78,8 @@ class TextResponse(AgentResponse):
     pass
 
 SYSTEM_PROMPT = """
-You are a helpful travel agent. Respond to queries with code that uses
-the already defined following functions:
+You are a helpful travel agent. Respond to queries with a single code block that uses
+the already defined following functions. Find flights should be used to find flights, and book flight should be used if the user wants to book a flight.
 
 def find_flights(origin: str, destination: str, date: datetime.date) -> list:
     # Returns a list of flight IDs that match the origin (represented by an airport code), destination (represented by an airport code), and date.
@@ -89,12 +89,18 @@ def book_flight(flight_id: int) -> Optional[int]:
     # Books a flight with the given ID and returns the booking ID.
     ...
 
-Return the result in a variable called result.
+Return the result as a tuple where the first element is the response text and the second element is a list of actions you took. For example, if you found flights with IDs 1 and 2, and booked flight 1, you would return the following:
+[]
 
 Today's date is September 1 2024.
 """
 
 class Agent:
+
+    def __init__(self, conversation: List[dict], flights: List[Flight], client: OpenAI):
+        self.conversation = conversation
+        self.flights = flights
+        self.client = client
 
     # The complete conversation with the LLM, including the system prompt.
     conversation: List[dict]
@@ -107,19 +113,54 @@ class Agent:
     program_state: dict
 
     def find_flights(self, origin: str, destination: str, date: date) -> List[Flight]:
-        pass
+        flights = []
+
+        for flight in self.flights:
+            if flight.origin == origin and flight.destination == destination and flight.date == date:
+                flights.append(flight)
+
+        return flights
         
     def book_flight(self, flight_id: int) -> Optional[int]:
-        pass
+        for flight in self.flights:
+            if flight.id == flight_id:
+                return flight.id
+
+        return None
+    
+    def extract_code(self, resp_text):
+        code_start = resp_text.find("```")
+        code_end = resp_text.rfind("```")
+        if code_start == -1 or code_end == -1:
+            return "pass"
+        return resp_text[code_start + 3 + 7:code_end]
 
     def say(self, user_message: str) -> AgentResponse:
-        pass
+        print(user_message, "\n\n")
+        self.conversation.append({"role": "user", "content": user_message})
+        globals = { "find_flights": self.find_flights, "book_flight": self.book_flight, "AgentResponse": AgentResponse, "result": None, "datetime": datetime }
+
+        resp = self.client.chat.completions.create(
+        messages = self.conversation,
+        model = "meta-llama/Meta-Llama-3.1-8B-Instruct",
+        temperature=0)
+        resp_text = resp.choices[0].message.content
+        print(resp_text)
+
+        exec(self.extract_code(resp_text), globals)
+
+        return globals["result"]
+
 
 
 class EvaluationResult:
     """
     The result of evaluating an agent on a benchmark.
     """
+
+    def __init__(self, score: float, conversation: List[dict]):
+        self.score = score
+        self.conversation = conversation
 
     # The score of the agent on the benchmark, between 0.0 and 1.0.
     score: float
@@ -130,7 +171,7 @@ def eval_agent(client: OpenAI, benchmark_file: str, flights: List[Flight]) -> fl
     """
     Evaluate the agent on the given benchmark YAML file.
     """
-    agent = Agent(flights=flights, client=client)
+    agent = Agent(flights=flights, client=client, conversation=[{"role": "system", "content": SYSTEM_PROMPT}])
     with open(benchmark_file, "r") as file:
         steps = yaml.safe_load(file)
     for n, step in enumerate(steps):
@@ -152,4 +193,4 @@ def eval_agent(client: OpenAI, benchmark_file: str, flights: List[Flight]) -> fl
     return EvaluationResult(1.0, agent.conversation)  
 
 
-eval_agent(client, "benchmark.yaml", load_flights_dataset())
+eval_agent(client, "example1.yaml", load_flights_dataset())
