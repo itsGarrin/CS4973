@@ -79,7 +79,7 @@ class TextResponse(AgentResponse):
 
 SYSTEM_PROMPT = """
 You are a helpful travel agent. Respond to queries with a single code block that uses
-the already defined following functions. Find flights should be used to find flights, and book flight should be used if the user wants to book a flight.
+the already defined following functions:
 
 def find_flights(origin: str, destination: str, date: datetime.date) -> list:
     # Returns a list of flight IDs that match the origin (represented by an airport code), destination (represented by an airport code), and date.
@@ -89,10 +89,12 @@ def book_flight(flight_id: int) -> Optional[int]:
     # Books a flight with the given ID and returns the booking ID.
     ...
 
-Return the result as a tuple where the first element is the response text and the second element is a list of actions you took. For example, if you found flights with IDs 1 and 2, and booked flight 1, you would return the following:
-[]
 
-Today's date is September 1 2024.
+Return back the result in a variable called `result`. It should be in the following format:
+['find-flights', [123, 456, 789]]  # If you are using the find_flights function
+['book-flight', 123]  # If you are using the book_flight function
+
+Today's date is September 1 2022.
 """
 
 class Agent:
@@ -138,7 +140,7 @@ class Agent:
     def say(self, user_message: str) -> AgentResponse:
         print(user_message, "\n\n")
         self.conversation.append({"role": "user", "content": user_message})
-        globals = { "find_flights": self.find_flights, "book_flight": self.book_flight, "AgentResponse": AgentResponse, "result": None, "datetime": datetime }
+        globals = { "find_flights": self.find_flights, "book_flight": self.book_flight, "result": None, "datetime": datetime }
 
         resp = self.client.chat.completions.create(
         messages = self.conversation,
