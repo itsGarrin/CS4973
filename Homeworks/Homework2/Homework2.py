@@ -78,23 +78,25 @@ class TextResponse(AgentResponse):
     pass
 
 SYSTEM_PROMPT = """
-You are a helpful travel agent. Respond to queries with a single code block that uses
-the already defined following functions:
+Today's date is September 1 2022. You are a helpful travel agent that has access to tools to perform actions. Respond to queries with a single code block that uses
+the already defined following functions (tools). For every prompt you recieve, you will decide which available tool to use from 
+the following list:
 
-def find_flights(origin: str, destination: str, date: datetime.date) -> list:
-    # Returns a list of flight IDs that match the origin (represented by an airport code), destination (represented by an airport code), and date.
-    ...
+- `find_flights(origin: str, destination: str, date: datetime.date) -> list` - Returns a list of Flight objects that match the origin (represented by an airport code), destination (represented by an airport code), and date.
+- `book_flight(flight_id: int) -> Optional[int]` - Books a flight with the given ID. Returns the flight ID if the booking was successful, or `None` if the flight was not found.
 
-def book_flight(flight_id: int) -> Optional[int]:
-    # Books a flight with the given ID and returns the booking ID.
-    ...
 
+Here are some example prompts and the tools you should use:
+
+"Find me a flight from BOS to LAX on February 1, 2023."
+- Tool: `find_flights("BOS", "LAX", datetime.date(2023, 2, 1))`
+
+"Book the flight with ID 123."
+- Tool: `book_flight(123)`
 
 Return back the result in a variable called `result`. It should be in the following format:
 ['find-flights', [123, 456, 789]]  # If you are using the find_flights function
 ['book-flight', 123]  # If you are using the book_flight function
-
-Today's date is September 1 2022.
 """
 
 class Agent:
@@ -138,9 +140,9 @@ class Agent:
         return resp_text[code_start + 3 + 7:code_end]
 
     def say(self, user_message: str) -> AgentResponse:
-        print(user_message, "\n\n")
+        # print(user_message, "\n\n")
         self.conversation.append({"role": "user", "content": user_message})
-        globals = { "find_flights": self.find_flights, "book_flight": self.book_flight, "result": None, "datetime": datetime }
+        globals = { "find_flights": self.find_flights, "book_flight": self.book_flight, "Flight": Flight, "result": None, "datetime": datetime }
 
         resp = self.client.chat.completions.create(
         messages = self.conversation,
@@ -151,7 +153,18 @@ class Agent:
 
         exec(self.extract_code(resp_text), globals)
 
-        return globals["result"]
+        self.conversation.append({"role": "system", "content": resp_text})
+
+        # print(globals["result"])
+        if globals["result"] is None:
+            return TextResponse(text=resp_text)
+        if globals["result"][0] == "find-flights":
+            flight_ids = [flight.id for flight in globals["result"][1]]
+            return FindFlightsResponse(text=resp_text, available_flights=flight_ids)
+        elif globals["result"][0] == "book-flight":
+            return BookFlightResponse(text=resp_text, booked_flight=globals["result"][1])
+        else:
+            return TextResponse(text=resp_text)
 
 
 
@@ -169,7 +182,7 @@ class EvaluationResult:
     # The conversation with the agent.
     conversation: List[dict]
 
-def eval_agent(client: OpenAI, benchmark_file: str, flights: List[Flight]) -> float:
+def eval_agent(client: OpenAI, benchmark_file: str, flights: List[Flight]) -> EvaluationResult:
     """
     Evaluate the agent on the given benchmark YAML file.
     """
@@ -178,6 +191,7 @@ def eval_agent(client: OpenAI, benchmark_file: str, flights: List[Flight]) -> fl
         steps = yaml.safe_load(file)
     for n, step in enumerate(steps):
         response = agent.say(step["prompt"])
+        # print(response)
         match step["expected_type"]:
             case "text":
                 if not isinstance(response, TextResponse):
@@ -195,4 +209,4 @@ def eval_agent(client: OpenAI, benchmark_file: str, flights: List[Flight]) -> fl
     return EvaluationResult(1.0, agent.conversation)  
 
 
-eval_agent(client, "example1.yaml", load_flights_dataset())
+print(eval_agent(client, "example1.yaml", load_flights_dataset()).score)
