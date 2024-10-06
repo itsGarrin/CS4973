@@ -1,0 +1,90 @@
+# This prompt tests the agent's ability to find flights from LA to JFK on a specific date.
+- prompt: I need to get from LA to JFK on Jan 2
+  expected_type: find-flights
+  expected_result: [79, 80]
+
+# This prompt tests the agent's ability to book a specific flight from the previously found flights.
+- prompt: Book the first one
+  expected_type: book-flight
+  expected_result: 79
+
+# This prompt tests the agent's ability to handle a simple text response.
+- prompt: Thank you!
+  expected_type: text
+
+# This prompt tests the agent's ability to find flights from SFO to LAX on a specific date.
+- prompt: Find flights from SFO to LAX on Feb 14
+  expected_type: find-flights
+  expected_result: [101, 102]
+
+# This prompt tests the agent's ability to book a specific flight from the previously found flights.
+- prompt: Book the second one
+  expected_type: book-flight
+  expected_result: 102
+
+# This prompt tests the agent's ability to handle a simple text response.
+- prompt: Thanks!
+  expected_type: text
+
+# This prompt tests the agent's ability to find flights from ORD to MIA on a specific date.
+- prompt: I need a flight from ORD to MIA on Mar 3
+  expected_type: find-flights
+  expected_result: [201, 202]
+
+# This prompt tests the agent's ability to book a specific flight from the previously found flights.
+- prompt: Book the first one
+  expected_type: book-flight
+  expected_result: 201
+
+# This prompt tests the agent's ability to handle a simple text response.
+- prompt: Appreciate it!
+  expected_type: text
+
+# This prompt tests the agent's ability to find flights from SEA to BOS on a specific date.
+- prompt: Show flights from SEA to BOS on Apr 10
+  expected_type: find-flights
+  expected_result: [301, 302]
+
+# This prompt tests the agent's ability to book a specific flight from the previously found flights.
+- prompt: Book the second one
+  expected_type: book-flight
+  expected_result: 302
+
+# This prompt tests the agent's ability to handle a simple text response.
+- prompt: Thank you very much!
+  expected_type: text
+
+# This prompt tests the agent's ability to handle an invalid date.
+- prompt: Find flights from LAX to JFK on Feb 30
+  expected_type: find-flights
+  expected_result: []
+
+# This prompt tests the agent's ability to handle a non-existent route.
+- prompt: Find flights from ABC to XYZ on Mar 15
+  expected_type: find-flights
+  expected_result: []
+
+# This prompt tests the agent's ability to handle booking a flight when none are available.
+- prompt: Book the first one
+  expected_type: book-flight
+  expected_result: None
+
+# This prompt tests the agent's ability to handle a case where no flights are found.
+- prompt: I need a flight from NYC to LON on Dec 25
+  expected_type: find-flights
+  expected_result: []
+
+# This prompt tests the agent's ability to handle a case where the user asks for a flight that is already booked.
+- prompt: Book the first one
+  expected_type: book-flight
+  expected_result: None
+
+# This prompt tests the agent's ability to handle a case where the user provides an invalid flight ID.
+- prompt: Book flight 9999
+  expected_type: book-flight
+  expected_result: None
+
+# This prompt tests the agent's ability to handle a case where the user asks for flights with a past date.
+- prompt: Find flights from LAX to JFK on Jan 1, 2000
+  expected_type: find-flights
+  expected_result: []
