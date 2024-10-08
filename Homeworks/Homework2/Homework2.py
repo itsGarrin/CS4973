@@ -148,13 +148,11 @@ class Agent:
         temperature=0)
 
         resp_text = resp.choices[0].message.content
-        print(resp_text)
 
         exec(self.extract_code(resp_text), globals)
 
-        self.conversation.append({"role": "system", "content": resp_text})
+        # self.conversation.append({"role": "system", "content": resp_text})
 
-        print(globals["result"])
         if globals["result"] is None or globals["result"][1] is None or globals["result"][0] is None:
             return TextResponse(text=resp_text)
         if globals["result"][0] == "find-flights":
