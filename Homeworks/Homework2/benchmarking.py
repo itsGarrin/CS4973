@@ -16,7 +16,6 @@ def load_yaml(p):
         return yaml.safe_load(p)
 
 all_benchmarks = [ load_yaml(f) for f in os.listdir() if f.endswith(".yaml") ]
-
 for benchmark in all_benchmarks:
     print(benchmark)
     score = eval_agent(client, benchmark, load_flights_dataset()).score

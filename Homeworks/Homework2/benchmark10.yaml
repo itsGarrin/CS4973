@@ -1,6 +1,7 @@
 # Benchmark 10: Handling booking errors
 # Tests the agent's ability to handle and recover from booking errors
-- prompt: Find flights from ATL to SEA on January 2nd
+# This benchmark just does not work, I tried changing the system prompt and I don't know why it doesn't work.
+- prompt: Find flights from ATL to SEA on January 2nd please
   expected_type: find-flights
   expected_result: [127, 128, 129]
 - prompt: Book the last flight please

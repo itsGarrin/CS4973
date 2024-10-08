@@ -88,9 +88,8 @@ Here are some example prompts and the tools you should use:
 "Book the flight with an ID of 123."
 - Tool: `book_flight(flight_id=123)`
 
-Return back the result in a variable called `result`. It should be in the following format:
-['find-flights', [123, 456, 789]]  # If you are using the find_flights function
-['book-flight', 123]  # If you are using the book_flight function
+Return back the result in a variable called `result` ONLY if a tool is used, otherwise return text.
+Result should be an array with 3 elements where the first element is the tool used, the second element is what the tool returned and the last element is a response to the user. Here are some examples:
 """
 
 class Agent:
@@ -156,13 +155,13 @@ class Agent:
         self.conversation.append({"role": "system", "content": resp_text})
 
         print(globals["result"])
-        if globals["result"] is None:
+        if globals["result"] is None or globals["result"][1] is None or globals["result"][0] is None:
             return TextResponse(text=resp_text)
         if globals["result"][0] == "find-flights":
-            # flight_ids = [flight.id for flight in globals["result"][1]]
-            return FindFlightsResponse(text=resp_text, available_flights=globals["result"][1])
+            flight_ids = [flight.id for flight in globals["result"][1]]
+            return FindFlightsResponse(text=globals["result"][2], available_flights=flight_ids)
         elif globals["result"][0] == "book-flight":
-            return BookFlightResponse(text=resp_text, booked_flight=globals["result"][1])
+            return BookFlightResponse(text=globals["result"][2], booked_flight=globals["result"][1])
         else:
             return TextResponse(text=resp_text)
 
@@ -190,17 +189,14 @@ from datetime import date
 flights = []
 flights += find_flights("ATL", "SEA", date(2023, 1, 9)) # find flights on the first date
 flights += find_flights("ATL", "SEA", date(2023, 1, 11)) # find flights on the second date
-flights = [flight.id for flight in flights]
-result = ['find-flights', flights]
-print(result)
+result = ['find-flights', flights, "I found flights 721 and 722 on January 9th and flight 723 on January 11th for you!"] # return the flight IDs
     ```'''},
     {"role": "user", "content": "Book the earliest flight for the journey"},
     {"role": "system", "content": '''```python
 from datetime import date
 flights = find_flights("ATL", "SEA", date(2023, 1, 9))
 flights = [flight.id for flight in flights]
-result = ['book-flight', book_flight(flights[0])] # book the earliest flight
-print(result)
+result = ['book-flight', book_flight(flights[0]), "I booked flight 721 on January 9th for you!"] # book the earliest flight
     ```'''},
 ]
 
