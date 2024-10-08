@@ -1,22 +1,11 @@
-from datasets import load_dataset
-from datetime import date, time, datetime
 import dataclasses
+from datetime import date, time, datetime
 from typing import List, Optional
-from openai import OpenAI
-import os
+
 import yaml
-from pathlib import Path
+from datasets import load_dataset
+from openai import OpenAI
 
-client = OpenAI(base_url=os.getenv("URL"), api_key=os.getenv("KEY"))
-
-# resp = client.chat.completions.create(
-#     messages = [{ 
-#         "role": "user", 
-#         "content": "Write short complaint to The Boston Globe about the rat problem at Northeastern CS. Blame the math department. No more than 4 sentences." 
-#     }],
-#     model = "meta-llama/Meta-Llama-3.1-8B-Instruct",
-#     temperature=0)
-# print(resp.choices[0].message.content)
 
 @dataclasses.dataclass
 class Flight:
@@ -49,7 +38,7 @@ def load_flights_dataset() -> List[Flight]:
     return [
         parse_flight(flight)
         for flight in load_dataset("nuprl/llm-systems-flights", split="train")
-    ] 
+    ]
 
 @dataclasses.dataclass
 class AgentResponse:
@@ -82,6 +71,8 @@ SYSTEM_PROMPT = """
 Today's date is September 1 2022. You are a helpful travel agent that has access to tools to perform actions. Respond to queries with a single code block that uses
 the already defined following functions (tools). For every prompt you recieve, you will decide which available tool to use from 
 the following list if the response makes sense. Don't respond with a result just to provide a response. Only respond with a result if it makes sense to do so.
+Always include necessary imports at the beginning of your code snippets.
+For example, when working with dates, use `from datetime import date`.
 
 - `find_flights(origin: str, destination: str, date: datetime.date) -> list` - Returns a list of Flight objects that match the origin (represented by an airport code), destination (represented by an airport code), and date.
 - `book_flight(flight_id: int) -> Optional[int]` - Books a flight with the given ID. Returns the flight ID if the booking was successful, or `None` if the flight was not found.
@@ -127,14 +118,14 @@ class Agent:
                 flights.append(flight)
 
         return flights
-        
+
     def book_flight(self, flight_id: int) -> Optional[int]:
         for flight in self.flights:
             if flight.id == flight_id and flight.available_seats > 0:
                 return flight.id
 
         return None
-    
+
     def extract_code(self, resp_text):
         code_start = resp_text.find("```")
         code_end = resp_text.rfind("```")
@@ -156,6 +147,7 @@ class Agent:
         messages = self.conversation,
         model = "meta-llama/Meta-Llama-3.1-8B-Instruct",
         temperature=0)
+
         resp_text = resp.choices[0].message.content
         print(resp_text)
 
@@ -163,7 +155,7 @@ class Agent:
 
         self.conversation.append({"role": "system", "content": resp_text})
 
-        # print(globals["result"])
+        print(globals["result"])
         if globals["result"] is None:
             return TextResponse(text=resp_text)
         if globals["result"][0] == "find-flights":

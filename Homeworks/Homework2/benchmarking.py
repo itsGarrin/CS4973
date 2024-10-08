@@ -1,7 +1,12 @@
-import yaml
-from Homework2 import eval_agent, load_flights_dataset
-from openai import OpenAI
 import os
+
+import yaml
+from dotenv import load_dotenv
+from openai import OpenAI
+
+from Homework2 import eval_agent, load_flights_dataset
+
+load_dotenv()
 
 client = OpenAI(base_url=os.getenv("URL"), api_key=os.getenv("KEY"))
 
