@@ -86,6 +86,8 @@ the following list if the response makes sense. Don't respond with a result just
 - `find_flights(origin: str, destination: str, date: datetime.date) -> list` - Returns a list of Flight objects that match the origin (represented by an airport code), destination (represented by an airport code), and date.
 - `book_flight(flight_id: int) -> Optional[int]` - Books a flight with the given ID. Returns the flight ID if the booking was successful, or `None` if the flight was not found.
 
+The flight object has an attribute `available_seats` that represents the number of available seats on the flight.
+It also has an attribute `airline` that represents the airline of the flight.
 
 Here are some example prompts and the tools you should use:
 
@@ -145,6 +147,11 @@ class Agent:
         self.conversation.append({"role": "user", "content": user_message})
         globals = { "find_flights": self.find_flights, "book_flight": self.book_flight, "Flight": Flight, "result": None, "datetime": datetime }
 
+        # if number of tokens in conversation greater than 2048, print
+        if len("".join([x["content"] for x in self.conversation])) > 5000:
+            print(self.conversation)
+            return TextResponse(text="Conversation too long. Please start a new conversation.")
+
         resp = self.client.chat.completions.create(
         messages = self.conversation,
         model = "meta-llama/Meta-Llama-3.1-8B-Instruct",
@@ -160,8 +167,8 @@ class Agent:
         if globals["result"] is None:
             return TextResponse(text=resp_text)
         if globals["result"][0] == "find-flights":
-            flight_ids = [flight.id for flight in globals["result"][1]]
-            return FindFlightsResponse(text=resp_text, available_flights=flight_ids)
+            # flight_ids = [flight.id for flight in globals["result"][1]]
+            return FindFlightsResponse(text=resp_text, available_flights=globals["result"][1])
         elif globals["result"][0] == "book-flight":
             return BookFlightResponse(text=resp_text, booked_flight=globals["result"][1])
         else:
@@ -191,6 +198,7 @@ from datetime import date
 flights = []
 flights += find_flights("ATL", "SEA", date(2023, 1, 9)) # find flights on the first date
 flights += find_flights("ATL", "SEA", date(2023, 1, 11)) # find flights on the second date
+flights = [flight.id for flight in flights]
 result = ['find-flights', flights]
 print(result)
     ```'''},
@@ -208,7 +216,7 @@ def eval_agent(client: OpenAI, benchmark_file: str, flights: List[Flight]) -> Ev
     """
     Evaluate the agent on the given benchmark YAML file.
     """
-    agent = Agent(flights=flights, client=client, conversation=CONVO)
+    agent = Agent(flights=flights, client=client, conversation=CONVO.copy())
     with open(benchmark_file, "r") as file:
         steps = yaml.safe_load(file)
     for n, step in enumerate(steps):

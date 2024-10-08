@@ -1,11 +1,9 @@
-# Benchmark 8: Time-based preferences
-# Tests the agent's ability to handle time-based preferences for flights
-- prompt: Show me afternoon flights from DFW to DEN on January 10th
+# Benchmark 8: Unavailable flight
+# Tests the agent's ability to handle flights that are full
+- prompt: Show me flights from MIA to LAX on Febuary 7th
   expected_type: find-flights
-  expected_result: [759, 760]
-- prompt: Is there an evening flight available?
-  expected_type: find-flights
-  expected_result: [761]
-- prompt: Book the evening flight please
+  expected_result: [2891, 2892]
+- prompt: Can you book the flight that is available?
   expected_type: book-flight
-  expected_result: 761
+  expected_result: 2891
+
