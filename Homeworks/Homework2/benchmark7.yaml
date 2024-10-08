@@ -1,6 +1,6 @@
 # Benchmark 7: Handling invalid requests
 # Tests the agent's ability to handle and respond to invalid or impossible requests
-# This did not work originally, but TODO
+# This did not work originally, but after telling the system to not respond to prompts that don't make sense. 
 - prompt: I want to fly to the moon on the 6th 
   expected_type: text
 - prompt: Oh, I meant from JFK to LAX

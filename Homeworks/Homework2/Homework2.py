@@ -81,7 +81,7 @@ class TextResponse(AgentResponse):
 SYSTEM_PROMPT = """
 Today's date is September 1 2022. You are a helpful travel agent that has access to tools to perform actions. Respond to queries with a single code block that uses
 the already defined following functions (tools). For every prompt you recieve, you will decide which available tool to use from 
-the following list:
+the following list if the response makes sense. Don't respond with a result just to provide a response. Only respond with a result if it makes sense to do so.
 
 - `find_flights(origin: str, destination: str, date: datetime.date) -> list` - Returns a list of Flight objects that match the origin (represented by an airport code), destination (represented by an airport code), and date.
 - `book_flight(flight_id: int) -> Optional[int]` - Books a flight with the given ID. Returns the flight ID if the booking was successful, or `None` if the flight was not found.
@@ -229,19 +229,3 @@ def eval_agent(client: OpenAI, benchmark_file: str, flights: List[Flight]) -> Ev
                 if response.booked_flight != step["expected_result"]:
                     return EvaluationResult(n / len(steps), agent.conversation)
     return EvaluationResult(1.0, agent.conversation)  
-
-
-def load_yaml(p):
-    with open(p):
-        return yaml.safe_load(p)
-
-# all_benchmarks = [ load_yaml(f) for f in os.listdir() if f.endswith(".yaml") ]
-all_benchmarks = ["benchmark7.yaml", "benchmark5.yaml", "benchmark4.yaml", "benchmark1.yaml", "benchmark2.yaml", "benchmark6.yaml", "example1.yaml", "benchmark3.yaml"]
-
-for benchmark in all_benchmarks:
-    print(benchmark)
-    print("\n\n")
-    print(eval_agent(client, benchmark, load_flights_dataset()).score)
-    print("\n\n")
-
-# print(eval_agent(client, "benchmark3.yaml", load_flights_dataset()).score)
