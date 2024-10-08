@@ -1,0 +1,7 @@
+# Benchmark 6: Date and location flexibility
+- prompt: I need to go from ATL to SEA on Jan 9
+  expected_type: find-flights
+  expected_result: [662, 663, 664]
+- prompt: Book the earliest flight for the journey
+  expected_type: book-flight
+  expected_result: 662

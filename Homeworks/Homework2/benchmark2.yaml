@@ -1,0 +1,10 @@
+# Benchmark 2: Multiple flight options and specific selection
+# Tests the agent's ability to handle multiple flight options and book a specific one
+- prompt: Show me flights from LAX to JFK on January 2nd
+  expected_type: find-flights
+  expected_result: [79, 80]
+- prompt: I'd like to book the second option
+  expected_type: book-flight
+  expected_result: 80
+- prompt: Great, thanks!
+  expected_type: text

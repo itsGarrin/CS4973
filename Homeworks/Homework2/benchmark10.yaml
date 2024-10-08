@@ -1,0 +1,13 @@
+# Benchmark 10: Handling booking errors
+# Tests the agent's ability to handle and recover from booking errors
+- prompt: Find flights from EWR to MIA on January 12th
+  expected_type: find-flights
+  expected_result: [871, 872, 873]
+- prompt: Book the last flight please
+  expected_type: book-flight
+  expected_result: 873
+- prompt: Sorry, that flight is no longer available. Can you book the first one instead?
+  expected_type: book-flight
+  expected_result: 871
+- prompt: Thank you for your help!
+  expected_type: text

@@ -1,0 +1,15 @@
+# Benchmark 5: Handling unavailable flights
+# Tests the agent's ability to handle situations where a requested flight is unavailable
+# This partially worked, but it's because its ambiguous when the user says "can I change it to the 8th instead?",
+# they could either mean they want to search flights on that date or they want to book a flight on that date.
+- prompt: I want to fly from BOS to ORD on January 7th
+  expected_type: find-flights
+  expected_result: [477]
+- prompt: Book that flight please
+  expected_type: book-flight
+  expected_result: 477
+- prompt: Actually, can I change it to the 8th instead?
+  expected_type: find-flights
+  expected_result: [554]
+- prompt: Sorry, that doesn't work. Let's stick with the original booking.
+  expected_type: text

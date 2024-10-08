@@ -5,6 +5,7 @@ from typing import List, Optional
 from openai import OpenAI
 import os
 import yaml
+from pathlib import Path
 
 client = OpenAI(base_url=os.getenv("URL"), api_key=os.getenv("KEY"))
 
@@ -91,8 +92,8 @@ Here are some example prompts and the tools you should use:
 "Find me a flight from BOS to LAX on February 1, 2023."
 - Tool: `find_flights("BOS", "LAX", datetime.date(2023, 2, 1))`
 
-"Book the flight with ID 123."
-- Tool: `book_flight(123)`
+"Book the flight with an ID of 123."
+- Tool: `book_flight(flight_id=123)`
 
 Return back the result in a variable called `result`. It should be in the following format:
 ['find-flights', [123, 456, 789]]  # If you are using the find_flights function
@@ -127,7 +128,7 @@ class Agent:
         
     def book_flight(self, flight_id: int) -> Optional[int]:
         for flight in self.flights:
-            if flight.id == flight_id:
+            if flight.id == flight_id and flight.available_seats > 0:
                 return flight.id
 
         return None
@@ -182,11 +183,32 @@ class EvaluationResult:
     # The conversation with the agent.
     conversation: List[dict]
 
+CONVO = [
+    {"role": "system", "content": SYSTEM_PROMPT},
+    {"role": "user", "content": "I need to go from ATL to SEA on Jan 9 or Jan 11"}, 
+    {"role": "system", "content": '''```python
+from datetime import date
+flights = []
+flights += find_flights("ATL", "SEA", date(2023, 1, 9)) # find flights on the first date
+flights += find_flights("ATL", "SEA", date(2023, 1, 11)) # find flights on the second date
+result = ['find-flights', flights]
+print(result)
+    ```'''},
+    {"role": "user", "content": "Book the earliest flight for the journey"},
+    {"role": "system", "content": '''```python
+from datetime import date
+flights = find_flights("ATL", "SEA", date(2023, 1, 9))
+flights = [flight.id for flight in flights]
+result = ['book-flight', book_flight(flights[0])] # book the earliest flight
+print(result)
+    ```'''},
+]
+
 def eval_agent(client: OpenAI, benchmark_file: str, flights: List[Flight]) -> EvaluationResult:
     """
     Evaluate the agent on the given benchmark YAML file.
     """
-    agent = Agent(flights=flights, client=client, conversation=[{"role": "system", "content": SYSTEM_PROMPT}])
+    agent = Agent(flights=flights, client=client, conversation=CONVO)
     with open(benchmark_file, "r") as file:
         steps = yaml.safe_load(file)
     for n, step in enumerate(steps):
@@ -209,4 +231,17 @@ def eval_agent(client: OpenAI, benchmark_file: str, flights: List[Flight]) -> Ev
     return EvaluationResult(1.0, agent.conversation)  
 
 
-print(eval_agent(client, "example1.yaml", load_flights_dataset()).score)
+def load_yaml(p):
+    with open(p):
+        return yaml.safe_load(p)
+
+# all_benchmarks = [ load_yaml(f) for f in os.listdir() if f.endswith(".yaml") ]
+all_benchmarks = ["benchmark7.yaml", "benchmark5.yaml", "benchmark4.yaml", "benchmark1.yaml", "benchmark2.yaml", "benchmark6.yaml", "example1.yaml", "benchmark3.yaml"]
+
+for benchmark in all_benchmarks:
+    print(benchmark)
+    print("\n\n")
+    print(eval_agent(client, benchmark, load_flights_dataset()).score)
+    print("\n\n")
+
+# print(eval_agent(client, "benchmark3.yaml", load_flights_dataset()).score)

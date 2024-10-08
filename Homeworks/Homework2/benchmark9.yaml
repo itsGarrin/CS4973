@@ -1,0 +1,11 @@
+# Benchmark 9: Airline preferences
+# Tests the agent's ability to filter flights based on airline preferences
+- prompt: Find Delta flights from ATL to SFO on January 11th
+  expected_type: find-flights
+  expected_result: [806]
+- prompt: Are there any United flights on the same route and date?
+  expected_type: find-flights
+  expected_result: []
+- prompt: Okay, let's book the Delta flight then
+  expected_type: book-flight
+  expected_result: 806

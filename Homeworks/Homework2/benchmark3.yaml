@@ -1,0 +1,13 @@
+# Benchmark 3: Date flexibility
+# Tests the agent's ability to suggest alternative dates when no flights are available
+# This didn't work originally, but I added code that changed the way flights are searched for to be able to support 
+# multiple dates. 
+- prompt: I need to fly from SFO to ORD on January 15th
+  expected_type: find-flights
+  expected_result: []
+- prompt: Are there any flights available on the 14th or 16th?
+  expected_type: find-flights
+  expected_result: [1002, 1157]
+- prompt: Book the flight on the 16th please
+  expected_type: book-flight
+  expected_result: 1157

@@ -1,0 +1,10 @@
+# Benchmark 1: Basic flight search and booking
+# Tests the agent's ability to find flights and book a specific one
+- prompt: I need to fly from LAX to JFK on January 1st
+  expected_type: find-flights
+  expected_result: [0]
+- prompt: Please book that flight for me
+  expected_type: book-flight
+  expected_result: 0
+- prompt: Thank you!
+  expected_type: text

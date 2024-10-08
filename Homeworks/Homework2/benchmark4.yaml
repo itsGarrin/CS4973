@@ -1,0 +1,11 @@
+# Benchmark 4: Airport code and city name interchangeability
+# Tests the agent's ability to understand both airport codes and city names
+- prompt: Find flights from New York to Los Angeles on January 6th
+  expected_type: find-flights
+  expected_result: [429, 430]
+- prompt: What about from JFK to LAX on the same day?
+  expected_type: find-flights
+  expected_result: [429, 430]
+- prompt: Book the JetBlue flight
+  expected_type: book-flight
+  expected_result: 429
