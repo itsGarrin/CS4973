@@ -1,10 +1,10 @@
-import streamlit as st
-from typing import List
-from datetime import date
-from dotenv import load_dotenv
 import os
+
+import streamlit as st
+from dotenv import load_dotenv
 from openai import OpenAI
-from Homework2 import Agent, CONVO, Flight, AgentResponse, FindFlightsResponse, BookFlightResponse, load_flights_dataset, SYSTEM_PROMPT
+
+from Homework2 import Agent, CONVO, FindFlightsResponse, BookFlightResponse, load_flights_dataset
 
 # Initialize OpenAI client
 load_dotenv()
