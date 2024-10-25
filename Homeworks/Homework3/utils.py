@@ -17,7 +17,7 @@ load_dotenv()
 CLIENT = OpenAI(base_url=os.getenv("URL"), api_key=os.getenv("KEY"))
 MODEL = "meta-llama/Meta-Llama-3.1-8B-Instruct"
 
-wikepedia_dataset = load_dataset("nuprl/engineering-llm-systems", name="wikipedia-northeastern-university", split="test")
+wikipedia_dataset = load_dataset("nuprl/engineering-llm-systems", name="wikipedia-northeastern-university", split="test")
 obscure_questions_dataset = load_dataset("nuprl/engineering-llm-systems", name="obscure_questions", split="test")
 obscure_questions_dataset_tiny = load_dataset("nuprl/engineering-llm-systems", name="obscure_questions", split="tiny")
 
@@ -31,12 +31,12 @@ model.eval()
 @cache
 def inverse_document_frequency(term: str) -> float:
     num_docs_with_term = 0
-    for item in wikepedia_dataset:
+    for item in wikipedia_dataset:
         if term in item["text"].split():
             num_docs_with_term += 1
     if num_docs_with_term == 0:
         return 0
-    return math.log(len(wikepedia_dataset) / num_docs_with_term)
+    return math.log(len(wikipedia_dataset) / num_docs_with_term)
 
 @cache
 def term_frequency2(term:str, document: str):
@@ -59,7 +59,7 @@ def rank_by_tf_idf(query: str, n: int) -> list:
     print(terms)
     query_vec = tf_idf_vector(terms, { "text": query })
     ranked_docs = sorted(
-        wikepedia_dataset,
+        wikipedia_dataset,
         key=lambda doc: tf_idf_vector(terms, doc).dot(query_vec)  ,
         reverse=True
     )
@@ -144,7 +144,7 @@ def answer_query(question: str, choices: List[str], documents: List[str]) -> str
 
 # Benchmark 'answer_query' using a subset of obscure questions.
 # This might include iterating over the dataset and comparing outputs to the correct answers.
-print(answer_query(obscure_questions_dataset_tiny[0]["prompt"], obscure_questions_dataset_tiny[0]["choices"], wikepedia_dataset))
+print(answer_query(obscure_questions_dataset_tiny[0]["prompt"], obscure_questions_dataset_tiny[0]["choices"], wikipedia_dataset))
 
 # TERMS = ['NFL', 'team', 'drafted', 'William', 'Jeffrey', 'Thomas', 'round', '1972', 'NFL', 'Draft']
 # print([inverse_document_frequency(term) for term in TERMS])
