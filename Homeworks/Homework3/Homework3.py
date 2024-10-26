@@ -1,25 +1,20 @@
-import spacy 
-from typing import List
-import datasets
-import math
+import os
 from functools import cache
+from typing import List
+
+import math
 import numpy as np
-from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModel
+import spacy
 import torch
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from openai import OpenAI
-import os 
+from transformers import AutoTokenizer, AutoModel
 
 load_dotenv()
 
 CLIENT = OpenAI(base_url=os.getenv("URL"), api_key=os.getenv("KEY"))
 MODEL = "meta-llama/Meta-Llama-3.1-8B-Instruct"
-
-wikipedia_dataset = load_dataset("nuprl/engineering-llm-systems", name="wikipedia-northeastern-university", split="test")
-obscure_questions_dataset = load_dataset("nuprl/engineering-llm-systems", name="obscure_questions", split="test")
-obscure_questions_dataset_tiny = load_dataset("nuprl/engineering-llm-systems", name="obscure_questions", split="tiny")
 
 # Load pre-trained BERT model and tokenizer
 tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
@@ -29,14 +24,14 @@ model = AutoModel.from_pretrained('bert-base-uncased')
 model.eval()
 
 @cache
-def inverse_document_frequency(term: str) -> float:
+def inverse_document_frequency(term: str, documents: List[str]) -> float:
     num_docs_with_term = 0
-    for item in wikipedia_dataset:
+    for item in documents:
         if term in item["text"].split():
             num_docs_with_term += 1
     if num_docs_with_term == 0:
         return 0
-    return math.log(len(wikipedia_dataset) / num_docs_with_term)
+    return math.log(len(documents) / num_docs_with_term)
 
 @cache
 def term_frequency2(term:str, document: str):
@@ -45,22 +40,22 @@ def term_frequency2(term:str, document: str):
 # def tf_idf_vector0(terms, doc):
 #     return np.array([term_frequency2(term, doc['text']) * inverse_document_frequency(term) for term in terms])
 
-def tf_idf_vector(terms, doc):
-    vec = np.array([term_frequency2(term, doc['text']) * inverse_document_frequency(term) for term in terms])
+def tf_idf_vector(terms, doc, documents: List[str]):
+    vec = np.array([term_frequency2(term, doc['text']) * inverse_document_frequency(term, documents) for term in terms])
     norm = np.linalg.norm(vec)
     if norm == 0:
         return np.zeros_like(vec)  # Return zero vector if all terms are absent
     return vec / norm
 
-def rank_by_tf_idf(query: str, n: int) -> list:
+def rank_by_tf_idf(query: str, n: int, documents: List[str]) -> list:
     nlp = spacy.load("en_core_web_sm")
     doc = nlp(query)
     terms = [token.text for token in doc if not token.is_stop and not token.is_punct]
     print(terms)
-    query_vec = tf_idf_vector(terms, { "text": query })
+    query_vec = tf_idf_vector(terms, { "text": query }, documents)
     ranked_docs = sorted(
-        wikipedia_dataset,
-        key=lambda doc: tf_idf_vector(terms, doc).dot(query_vec)  ,
+        documents,
+        key=lambda doc: tf_idf_vector(terms, doc, documents).dot(query_vec)  ,
         reverse=True
     )
     return ranked_docs[:n]
@@ -106,7 +101,7 @@ def answer_query(question: str, choices: List[str], documents: List[str]) -> str
      """
     print(question)
     # get the top 100 documents by tf-idf
-    documents = rank_by_tf_idf(question, 100)
+    documents = rank_by_tf_idf(question, 10, documents)
     # print([document["title"] for document in documents])
 
     # rerank the documents using BERT embeddings
@@ -126,11 +121,12 @@ def answer_query(question: str, choices: List[str], documents: List[str]) -> str
     
     print(len(all_chunks), all_chunks, all_chunks[0], len(all_chunks[0]))
 
+    context = " ".join(all_chunks)
+
     # TODO: FIGURE OUT HOW TO CALL IT HERE?
     # add the context to the question
-    PROMPT = f"Context: {all_chunks[0]}\nQuestion: {question}\nChoices:\nA. {choices[0]}\nB. {choices[1]}\nC. {choices[2]}\nD. {choices[3]}\nAnswer:"
+    PROMPT = f"Context: {context}\nQuestion: {question}\nChoices:\nA. {choices[0]}\nB. {choices[1]}\nC. {choices[2]}\nD. {choices[3]}\nAnswer:"
 
-    # PROMPT = f"Question: {question}\nChoices:\nA. {choices[0]}\nB. {choices[1]}\nC. {choices[2]}\nD. {choices[3]}\nAnswer:"
 
     resp = CLIENT.completions.create(
         model=MODEL,
@@ -141,19 +137,3 @@ def answer_query(question: str, choices: List[str], documents: List[str]) -> str
     
     # call the OpenAI API to generate answers
     return resp.choices[0].text.strip()
-
-# Benchmark 'answer_query' using a subset of obscure questions.
-# This might include iterating over the dataset and comparing outputs to the correct answers.
-print(answer_query(obscure_questions_dataset_tiny[0]["prompt"], obscure_questions_dataset_tiny[0]["choices"], wikipedia_dataset))
-
-# TERMS = ['NFL', 'team', 'drafted', 'William', 'Jeffrey', 'Thomas', 'round', '1972', 'NFL', 'Draft']
-# print([inverse_document_frequency(term) for term in TERMS])
-
-# query_vec = tf_idf_vector(TERMS, { "text": obscure_questions_dataset_tiny[1]["prompt"] })
-# tf_idf_vector_actual = tf_idf_vector(TERMS, wikepedia_dataset[1091])
-# tf_idf_vector_bad = tf_idf_vector(TERMS, wikepedia_dataset[389])
-# print(tf_idf_vector_actual, tf_idf_vector_bad)
-
-# print("\n")
-# print(tf_idf_vector_actual.dot(query_vec))
-# print(tf_idf_vector_bad.dot(query_vec))
