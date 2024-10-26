@@ -7,6 +7,7 @@ import numpy as np
 import spacy
 import torch
 from dotenv import load_dotenv
+from langchain.llms import OpenAI as LangChainOpenAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from openai import OpenAI
 from transformers import AutoTokenizer, AutoModel
@@ -22,6 +23,9 @@ model = AutoModel.from_pretrained('bert-base-uncased')
 
 # Ensure the model is in evaluation mode
 model.eval()
+
+# Initialize LangChain's OpenAI client
+langchain_client = LangChainOpenAI(base_url=os.getenv("URL"), api_key=os.getenv("KEY"))
 
 @cache
 def inverse_document_frequency(term: str, documents: List[str]) -> float:
@@ -107,7 +111,6 @@ def answer_query(question: str, choices: List[str], documents: List[str]) -> str
     # rerank the documents using BERT embeddings
     documents = rank_by_bert_similarity(question, documents, 20)
 
-    # TODO: CHUNK PROPERLY
 
     text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=2048,
@@ -120,6 +123,13 @@ def answer_query(question: str, choices: List[str], documents: List[str]) -> str
         all_chunks.extend(chunks)
     
     print(len(all_chunks), all_chunks, all_chunks[0], len(all_chunks[0]))
+
+    # Summarize each chunk to reduce size and enhance focus
+    summarized_chunks = []
+    for chunk in all_chunks:
+        summary_prompt = f"Summarize the following text:\n\n{chunk}\n\nSummary:"
+        summary_response = langchain_client.generate(prompts=[summary_prompt])
+        summarized_chunks.append(summary_response['choices'][0]['text'].strip())
 
     context = " ".join(all_chunks)
 
