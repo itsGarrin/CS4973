@@ -1,16 +1,16 @@
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import re
 from functools import cache
 from typing import List
 
 import math
 import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
 import spacy
 import torch
 from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from openai import OpenAI
+from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm.notebook import tqdm
 from transformers import AutoTokenizer, AutoModel
 
@@ -69,12 +69,17 @@ def class_rank_by_tf_idf(query: str, n: int, documents: List[dict[str, str]]) ->
 
 
 def rank_by_tf_idf(query: str, n: int, documents: List[dict[str, str]]) -> list:
+    # Function to remove punctuation and numbers from text
+    def remove_punctuation(text: str) -> str:
+        return re.sub(r'[^\w\s]', '', re.sub(r'\d+', '', text))
+
     # Prepare document texts and include query in the corpus
-    doc_texts = [doc["text"] for doc in documents]
-    corpus = doc_texts + [query]
+    doc_texts = [remove_punctuation(doc["text"]) for doc in documents]
+    cleaned_query = remove_punctuation(query)
+    corpus = doc_texts + [cleaned_query]
 
     # Initialize TfidfVectorizer and compute TF-IDF matrix
-    vectorizer = TfidfVectorizer(stop_words="english")
+    vectorizer = TfidfVectorizer(stop_words="english", lowercase=True)
     tfidf_matrix = vectorizer.fit_transform(corpus)
 
     # Separate query vector and document vectors
@@ -84,6 +89,7 @@ def rank_by_tf_idf(query: str, n: int, documents: List[dict[str, str]]) -> list:
     # Compute cosine similarities and get top n ranked documents
     similarity_scores = (doc_vecs @ query_vec.T).toarray().ravel()
     top_indices = np.argsort(similarity_scores)[-n:][::-1]
+
     return [documents[i] for i in top_indices]
 
 
@@ -154,7 +160,6 @@ def answer_query(
 
     all_chunks = []
 
-    # Use tqdm to show progress while splitting text into chunks
     for article in documents:
         chunks = text_splitter.split_text(article["text"])
         all_chunks.extend(chunks)
