@@ -1,15 +1,17 @@
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import cache
 from typing import List
 
 import math
 import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
 import spacy
 import torch
 from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from openai import OpenAI
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 from transformers import AutoTokenizer, AutoModel
 
 load_dotenv()
@@ -27,16 +29,12 @@ model.eval()
 
 @cache
 def inverse_document_frequency(term: str, documents: tuple) -> float:
-    num_docs_with_term = 0
-    for item in documents:
-        if term in item.split():
-            num_docs_with_term += 1
+    num_docs_with_term = sum(1 for item in documents if term in item.split())
     if num_docs_with_term == 0:
-        return 0
+        return 0.0
     return math.log(len(documents) / num_docs_with_term)
 
 
-@cache
 def term_frequency2(term: str, document: str):
     return document.count(term)
 
@@ -50,12 +48,10 @@ def tf_idf_vector(terms, doc, documents: tuple):
         ]
     )
     norm = np.linalg.norm(vec)
-    if norm == 0:
-        return np.zeros_like(vec)  # Return zero vector if all terms are absent
-    return vec / norm
+    return vec / norm if norm != 0 else np.zeros_like(vec)
 
 
-def rank_by_tf_idf(query: str, n: int, documents: List[dict[str, str]]) -> list:
+def class_rank_by_tf_idf(query: str, n: int, documents: List[dict[str, str]]) -> list:
     nlp = spacy.load("en_core_web_sm")
     doc = nlp(query)
     terms = [token.text for token in doc if not token.is_stop and not token.is_punct]
@@ -70,6 +66,25 @@ def rank_by_tf_idf(query: str, n: int, documents: List[dict[str, str]]) -> list:
         reverse=True,
     )
     return ranked_docs[:n]
+
+
+def rank_by_tf_idf(query: str, n: int, documents: List[dict[str, str]]) -> list:
+    # Prepare document texts and include query in the corpus
+    doc_texts = [doc["text"] for doc in documents]
+    corpus = doc_texts + [query]
+
+    # Initialize TfidfVectorizer and compute TF-IDF matrix
+    vectorizer = TfidfVectorizer(stop_words="english")
+    tfidf_matrix = vectorizer.fit_transform(corpus)
+
+    # Separate query vector and document vectors
+    query_vec = tfidf_matrix[-1]  # Last vector is for the query
+    doc_vecs = tfidf_matrix[:-1]  # All other vectors are for the documents
+
+    # Compute cosine similarities and get top n ranked documents
+    similarity_scores = (doc_vecs @ query_vec.T).toarray().ravel()
+    top_indices = np.argsort(similarity_scores)[-n:][::-1]
+    return [documents[i] for i in top_indices]
 
 
 def get_bert_embedding(text: str) -> torch.Tensor:
@@ -184,17 +199,21 @@ def answer_query(
 
     # Add multiple varied examples to the conversation history
     for eq, ec, ea in zip(example_questions, example_choices, example_answers):
-        conversation_history.append({
-            "role": "user",
-            "content": f"Question: {eq}\nChoices:\n{ec[0]}\n{ec[1]}\n{ec[2]}\n{ec[3]}\nAnswer: {ea}"
-        })
+        conversation_history.append(
+            {
+                "role": "user",
+                "content": f"Question: {eq}\nChoices:\n{ec[0]}\n{ec[1]}\n{ec[2]}\n{ec[3]}\nAnswer: {ea}",
+            }
+        )
 
     # Add the current question to the conversation history
-    conversation_history.append({
-        "role": "user",
-        "content": f"Question: {question}\nChoices:\n"
-                   f"{choices[0]}\n{choices[1]}\n{choices[2]}\n{choices[3]}"
-    })
+    conversation_history.append(
+        {
+            "role": "user",
+            "content": f"Question: {question}\nChoices:\n"
+            f"{choices[0]}\n{choices[1]}\n{choices[2]}\n{choices[3]}",
+        }
+    )
 
     # Add ranked chunks to conversation history
     for chunk in reranked_chunks:
@@ -212,7 +231,7 @@ def answer_query(
 
     # Call the OpenAI API to generate answers
     resp = CLIENT.completions.create(
-        model=MODEL, temperature=0.5, prompt=final_prompt, max_tokens=1
+        model=MODEL, temperature=0.1, prompt=final_prompt, max_tokens=1
     )
 
     answer = resp.choices[0].text.strip()
