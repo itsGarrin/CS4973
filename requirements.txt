@@ -71,3 +71,5 @@ torch~=2.5.0
 langchain~=0.3.4
 transformers~=4.46.0
 scikit-learn~=1.5.2
+beautifulsoup4~=4.12.3
+markdownify~=0.13.1
