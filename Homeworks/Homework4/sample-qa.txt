@@ -1,0 +1,29 @@
+Question: Can you explain the writing-intensive requirements for the program?
+Answer: The writing-intensive requirements for the program include ENGW 1111, ENGW 3302, ENGW 3307, or ENGW 3315. These courses are designed to help students develop their writing skills and apply them to real-world problems.
+
+Question: What is the Program Requirement for the Bachelor of Science in Computer Science and Music degree?
+Answer: The Program Requirement is 129 total semester hours, which includes the requirements for the Computer Science and Music majors, as well as general electives.
+
+Question: What are the music theory and music in context electives, and how can I choose the right courses for my interests?
+Answer: The music theory and music in context electives are designed to provide students with a deeper understanding of music and its context. Music theory electives cover topics such as music notation, harmony, and composition, while music in context electives explore the social, cultural, and historical contexts of music. To choose the right courses for your interests, consider your career goals and what type of music-related work you want to do. For example, if you're interested in music composition, you may want to take music theory electives that focus on composition and harmony. If you're interested in music history or cultural studies, you may want to take music in context electives that explore these topics. It's also a good idea to consult with an advisor or music faculty member to get personalized recommendations and guidance.
+
+Question: What is the Professional Development for Khoury Co-op (CS 1210) or Professional Development for Co-op (EESH 2000) course, and what are its credit hours?
+Answer: The Professional Development for Khoury Co-op (CS 1210) or Professional Development for Co-op (EESH 2000) course is a required course that provides students with the skills and knowledge needed to succeed in their co-op experiences. It has 1 credit hour.
+
+Question: What are the supporting science courses required for the SLPA program?
+Answer: The supporting science courses required for the SLPA program include BIOL 2217 and BIOL 2218 (Integrated Anatomy and Physiology 1 and Lab), and PHYS 1145 and PHYS 1146 (Physics for Life Sciences 1 and Lab).
+
+Question: What are the key skills and knowledge areas that I will gain through the Data Science and Business Administration combined major?
+Answer: Through the Data Science and Business Administration combined major, you will gain skills and knowledge in data science, including data collection, manipulation, storage, retrieval, and computational analysis. You will also gain knowledge in business administration, including management theory and practice, corporate partnerships, and experiential assignments. This combination of technical and business skills will prepare you for a career in data-driven business decision-making.
+
+Question: What are the general electives required to complete the program?
+Answer: A total of 16 semester hours of general electives are required to complete the program.
+
+Question: What is the Data Science and Chemistry major, and what are its key components?
+Answer: The Data Science and Chemistry major combines chemistry, information science, and mathematics to give students both breadth and depth in chemistry and data science fundamentals. It includes coursework in data collection, manipulation, storage, retrieval, and computational analysis of chemical and other scientific data.
+
+Question: What are the two options for the Programming Sequence Pathways in the Data Science and Chemistry major?
+Answer: The two options are the Computer Science Option and the Data Science Option. The Computer Science Option includes courses such as Fundamentals of Computer Science 1 and 2, Object-Oriented Design, and Discrete Structures. The Data Science Option includes courses such as Programming with Data, Intermediate Programming with Data, and Advanced Programming with Data.
+
+Question: What are some key courses that a student should take in the first two years of a chemistry program, and why are they important?
+Answer: Some key courses that a student should take in the first two years of a chemistry program include general chemistry, organic chemistry, and calculus. General chemistry provides a foundation in the principles of chemistry, including atomic structure, chemical bonding, and chemical reactions. Organic chemistry builds on this foundation, introducing students to the properties and reactions of carbon-based compounds. Calculus is also essential for chemistry students, as it provides a mathematical framework for understanding chemical phenomena. These courses are important because they provide a solid foundation in the principles of chemistry and mathematics, which are essential for success in more advanced chemistry courses.
