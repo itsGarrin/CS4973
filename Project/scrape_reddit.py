@@ -31,7 +31,7 @@ def extract_links_from_post(submission_id):
 def collect_answers_from_comment(comment, question_id):
     answers = []
 
-    # If the comment is a reply to the question, or any other comment, capture it as an answer
+    # If the comment is a reply to the question, capture it as an answer
     if comment.parent_id == f"t1_{question_id}" and comment.score >= 0:
         # Skip deleted comments
         if comment.body.lower() == "[deleted]" or not comment.author:
@@ -66,9 +66,6 @@ def scrape_thread_content(thread_url):
     thread.comments.replace_more(limit=None)
     comments = list(thread.comments.list())
 
-    # Debugging: Check how many comments we fetched
-    print(f"Fetched {len(comments)} comments for thread: {thread.title}")
-
     # Iterate over all comments and treat only parent comments as questions
     for comment in comments:
         # Skip deleted comments
@@ -90,60 +87,89 @@ def scrape_thread_content(thread_url):
                     "answers": answers
                 })
 
-    # Debugging: Check collected Q&A pairs
-    if thread_content["qa_pairs"]:
-        print(f"Collected {len(thread_content['qa_pairs'])} Q&A pairs.")
-    else:
-        print("No Q&A pairs found.")
-
     return thread_content
 
 
-def scrape_daily_post_threads(post_id):
-    # Get all links from the daily post
-    links = extract_links_from_post(post_id)
-    print(f"Found {len(links)} threads.")
+def classify_thread_type(title):
+    title_lower = title.lower()
 
-    threads_data = []
-    for link in links:
-        thread_data = scrape_thread_content(link)
-
-        # Store Q&A pairs in a structured format for DataFrame
-        for qa_pair in thread_data["qa_pairs"]:
-            question = qa_pair["question"]
-            question_author = qa_pair["question_author"]
-            for answer in qa_pair["answers"]:
-                threads_data.append({
-                    "thread_title": thread_data["title"],
-                    "thread_url": thread_data["url"],
-                    "question": question,
-                    "question_author": question_author,
-                    "answer": answer["answer"],
-                    "answer_author": answer["author"]
-                })
-
-    # Debugging: Check the structure of threads_data before creating DataFrame
-    if threads_data:
-        print(f"Collected {len(threads_data)} Q&A pairs.")
+    # Classify thread by its title
+    if "add/drop" in title_lower:
+        return "Add_Drop"
+    elif "trade" in title_lower:
+        return "Trade"
+    elif "wdis flex" in title_lower:
+        return "WDIS_Flex"
+    elif "wdis k/te/def" in title_lower:
+        return "WDIS_K_TE_DEF"
+    elif "wdis qb" in title_lower:
+        return "WDIS_QB"
+    elif "wdis rb" in title_lower:
+        return "WDIS_RB"
+    elif "wdis wr" in title_lower:
+        return "WDIS_WR"
     else:
-        print("No data found.")
+        return "General"  # Default category
+
+
+def scrape_daily_post_threads(post_ids):
+    # Dictionary to store Q&A pairs for each thread type
+    threads_data = {
+        "Add_Drop": [],
+        "Trade": [],
+        "WDIS_Flex": [],
+        "WDIS_K_TE_DEF": [],
+        "WDIS_QB": [],
+        "WDIS_RB": [],
+        "WDIS_WR": [],
+        "General": []
+    }
+
+    for post_id in post_ids:
+        # Get all links from the daily post
+        links = extract_links_from_post(post_id)
+        print(f"Found {len(links)} threads from post ID {post_id}.")
+
+        for link in links:
+            thread_data = scrape_thread_content(link)
+
+            # Classify thread by its title
+            thread_type = classify_thread_type(thread_data["title"])
+
+            # Store Q&A pairs in the corresponding thread type category
+            for qa_pair in thread_data["qa_pairs"]:
+                question = qa_pair["question"]
+                question_author = qa_pair["question_author"]
+                for answer in qa_pair["answers"]:
+                    threads_data[thread_type].append({
+                        "thread_title": thread_data["title"],
+                        "thread_url": thread_data["url"],
+                        "question": question,
+                        "question_author": question_author,
+                        "answer": answer["answer"],
+                        "answer_author": answer["author"]
+                    })
 
     return threads_data
 
 
 # Usage Example
 if __name__ == "__main__":
-    daily_post_id = "1h1uirv"  # Replace with the daily post's ID
-    threads = scrape_daily_post_threads(daily_post_id)
+    id_sat_afternoon = '1h3h2v0'
+    id_sat_morning = '1h3b7qd'
+    id_fri_evening = '1h2znvj'
+    id_thu_morning = '1h1uirv'
 
-    # Convert the results into a pandas DataFrame
-    df = pd.DataFrame(threads)
+    # List of post IDs for multiple days
+    post_ids = [id_sat_afternoon, id_sat_morning, id_fri_evening, id_thu_morning]
 
-    # Debugging: Check the DataFrame contents
-    if not df.empty:
-        print(df.head())
-    else:
-        print("No data found.")
+    # Scrape threads from each post ID
+    threads = scrape_daily_post_threads(post_ids)
 
-    # Save to parquet
-    df.to_parquet("fantasy_football_qa_pairs.parquet", index=False)
+    # Save each thread type to a separate parquet file
+    for thread_type, thread_list in threads.items():
+        if thread_list:  # Only save files that have data
+            df = pd.DataFrame(thread_list)
+            file_name = f"parquet/{thread_type}_qa_pairs.parquet"
+            df.to_parquet(file_name, index=False)
+            print(f"Saved {len(df)} Q&A pairs for {thread_type} to {file_name}")
