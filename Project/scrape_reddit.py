@@ -1,13 +1,23 @@
+import os
 import re
 from datetime import datetime, timedelta, UTC, timezone
 
 import pandas as pd
 import praw
+from dotenv import load_dotenv
+from huggingface_hub import HfApi
 
+load_dotenv()
+
+# Hugging Face Configurations
+HF_TOKEN = os.getenv("HF_TOKEN") # Replace with your token
+REPO_ID = os.getenv("REPO_ID") # Replace with your repo ID
+
+# Reddit API Configuration
 reddit = praw.Reddit(
-    client_id="BrA1seVpmeQqXQWOIxnTdA",
-    client_secret="o3Oj5eEIG8YAQZ-0NPVqE9ZkyyET3A",
-    password="39clues",
+    client_id=os.getenv("REDDIT_CLIENT_ID"),
+    client_secret=os.getenv("REDDIT_CLIENT_SECRET"),
+    password=os.getenv("REDDIT_PASSWORD"),
     user_agent="fantasyfootballdata",
     username="joindaclub",
 )
@@ -166,10 +176,28 @@ def get_index_thread_ids(username, days):
             break
     return thread_ids
 
+def upload_to_huggingface(file_path, repo_id):
+    """
+    Upload a file to Hugging Face dataset hub.
+    """
+    api = HfApi()
+    try:
+        # Upload file to Hugging Face Hub
+        api.upload_file(
+            path_or_fileobj=file_path,
+            path_in_repo=os.path.basename(file_path),
+            repo_id=repo_id,
+            token=HF_TOKEN,
+            repo_type="dataset",
+        )
+        print(f"Uploaded {file_path} to {repo_id}")
+    except Exception as e:
+        print(f"Failed to upload {file_path}: {e}")
+
 # Usage Example
 if __name__ == "__main__":
     username = "ffbot"
-    days = 5  # Number of days to scrape
+    days = 7  # Number of days to scrape
     post_ids = get_index_thread_ids(username, days)
 
     # Scrape threads from each post ID
@@ -181,4 +209,8 @@ if __name__ == "__main__":
             df = pd.DataFrame(thread_list)
             file_name = f"parquet/{thread_type}_qa_pairs.parquet"
             df.to_parquet(file_name, index=False)
+
+            # Upload the file to Hugging Face
+            upload_to_huggingface(file_name, REPO_ID)
+
             print(f"Saved {len(df)} Q&A pairs for {thread_type} to {file_name}")
