@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timedelta, UTC, timezone
 
 import pandas as pd
 import praw
@@ -152,16 +153,24 @@ def scrape_daily_post_threads(post_ids):
 
     return threads_data
 
+def get_index_thread_ids(username, days):
+    user = reddit.redditor(username)
+    thread_ids = []
+    cutoff_date = datetime.now(UTC) - timedelta(days=days)
+    for submission in user.submissions.new(limit=None):
+        submission_time = datetime.fromtimestamp(submission.created_utc, tz=timezone.utc)
+
+        if "Index" in submission.title and submission_time > cutoff_date:
+            thread_ids.append(submission.id)
+        if len(thread_ids) == days * 3:  # 3 posts a day, stop if we have enough threads
+            break
+    return thread_ids
 
 # Usage Example
 if __name__ == "__main__":
-    id_sat_afternoon = '1h3h2v0'
-    id_sat_morning = '1h3b7qd'
-    id_fri_evening = '1h2znvj'
-    id_thu_morning = '1h1uirv'
-
-    # List of post IDs for multiple days
-    post_ids = [id_sat_afternoon, id_sat_morning, id_fri_evening, id_thu_morning]
+    username = "ffbot"
+    days = 5  # Number of days to scrape
+    post_ids = get_index_thread_ids(username, days)
 
     # Scrape threads from each post ID
     threads = scrape_daily_post_threads(post_ids)
